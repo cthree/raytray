@@ -1,5 +1,7 @@
 #![allow(unused_macros, dead_code)]
 
+use std::ops::Add;
+
 macro_rules! point {
     ($x:expr, $y:expr, $z:expr) => {
         Tuple::point($x, $y, $z);
@@ -58,6 +60,19 @@ impl Tuple {
     }
 }
 
+impl Add for Tuple {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z,
+            w: self.w + other.w,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -106,5 +121,10 @@ mod tests {
     fn test_point_macro_creates_a_point() {
         let test_point = point!(0.0, 0.0, 0.0);
         assert!(test_point.is_point());
+    }
+
+    #[test]
+    fn test_two_tuples_add_together() {
+        assert!(point!(3.0, -2.0, 5.0) + vector!(-2.0, 3.0, 1.0) == point!(1.0, 1.0, 6.0))
     }
 }
