@@ -1,6 +1,6 @@
 #![allow(unused_macros, dead_code)]
 
-use std::ops::Add;
+use std::ops::{Add, Neg, Sub};
 
 macro_rules! point {
     ($x:expr, $y:expr, $z:expr) => {
@@ -23,7 +23,7 @@ pub struct Tuple {
 }
 
 impl Tuple {
-    fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
+    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
         Self { x, y, z, w }
     }
 
@@ -69,6 +69,32 @@ impl Add for Tuple {
             y: self.y + other.y,
             z: self.z + other.z,
             w: self.w + other.w,
+        }
+    }
+}
+
+impl Sub for Tuple {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self {
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+            z: self.z - other.z,
+            w: self.w - other.w,
+        }
+    }
+}
+
+impl Neg for Tuple {
+    type Output = Self;
+
+    fn neg(self) -> Self {
+        Self {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+            w: -self.w,
         }
     }
 }
@@ -125,6 +151,38 @@ mod tests {
 
     #[test]
     fn test_two_tuples_add_together() {
-        assert!(point!(3.0, -2.0, 5.0) + vector!(-2.0, 3.0, 1.0) == point!(1.0, 1.0, 6.0))
+        assert!(point!(3.0, -2.0, 5.0) + vector!(-2.0, 3.0, 1.0) == point!(1.0, 1.0, 6.0));
+    }
+
+    #[test]
+    fn test_can_subtract_two_points() {
+        assert_eq!(
+            point!(3.0, 2.0, 1.0) - point!(5.0, 6.0, 7.0),
+            vector!(-2.0, -4.0, -6.0)
+        );
+    }
+
+    #[test]
+    fn test_can_subtract_a_vector_from_a_point() {
+        assert_eq!(
+            point!(3.0, 2.0, 1.0) - vector!(5.0, 6.0, 7.0),
+            point!(-2.0, -4.0, -6.0)
+        );
+    }
+
+    #[test]
+    fn test_can_subtract_two_vectors() {
+        assert_eq!(
+            vector!(3.0, 2.0, 1.0) - vector!(5.0, 6.0, 7.0),
+            vector!(-2.0, -4.0, -6.0)
+        );
+    }
+
+    #[test]
+    fn test_can_negate_a_vector() {
+        assert_eq!(
+            -Tuple::new(1.0, -2.0, 3.0, -4.0),
+            Tuple::new(-1.0, 2.0, -3.0, 4.0)
+        );
     }
 }
