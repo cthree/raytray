@@ -1,6 +1,6 @@
 #![allow(unused_macros, dead_code)]
 
-use std::ops::{Add, Neg, Sub};
+use std::ops::{Add, Mul, Neg, Sub};
 
 macro_rules! point {
     ($x:expr, $y:expr, $z:expr) => {
@@ -99,6 +99,19 @@ impl Neg for Tuple {
     }
 }
 
+impl Mul<f32> for Tuple {
+    type Output = Self;
+
+    fn mul(self, rhs: f32) -> Self {
+        Self {
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
+            w: self.w * rhs,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -183,6 +196,22 @@ mod tests {
         assert_eq!(
             -Tuple::new(1.0, -2.0, 3.0, -4.0),
             Tuple::new(-1.0, 2.0, -3.0, 4.0)
+        );
+    }
+
+    #[test]
+    fn test_can_multiply_a_tuple_by_a_scalar() {
+        assert_eq!(
+            Tuple::new(1.0, -2.0, 3.0, -4.0) * 3.5,
+            Tuple::new(3.5, -7.0, 10.5, -14.0)
+        );
+    }
+
+    #[test]
+    fn test_can_multiply_by_a_fraction() {
+        assert_eq!(
+            Tuple::new(1.0, -2.0, 3.0, -4.0) * 0.5,
+            Tuple::new(0.5, -1.0, 1.5, -2.0)
         );
     }
 }
