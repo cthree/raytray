@@ -75,6 +75,10 @@ impl Tuple {
             w: self.w / magnitude,
         }
     }
+
+    pub fn dot(&self, other: Self) -> f32 {
+        self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
+    }
 }
 
 impl Add for Tuple {
@@ -274,5 +278,10 @@ mod tests {
     #[test]
     fn test_can_normalize_a_vector() {
         assert_eq!(vector!(4.0, 0.0, 0.0).normalize(), vector!(1.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_can_compute_the_dot_product_of_a_vector() {
+        assert_eq!(vector!(1.0, 2.0, 3.0).dot(vector!(2.0, 3.0, 4.0)), 20.0);
     }
 }
