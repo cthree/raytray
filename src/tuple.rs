@@ -1,6 +1,6 @@
 #![allow(unused_macros, dead_code)]
 
-use std::ops::{Add, Mul, Neg, Sub};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 macro_rules! point {
     ($x:expr, $y:expr, $z:expr) => {
@@ -58,6 +58,23 @@ impl Tuple {
     pub fn is_point(&self) -> bool {
         self.w == 1.0
     }
+
+    /// Calculate the magnitude (scale) of a vector
+    pub fn magnitude(&self) -> f32 {
+        (self.x() * self.x() + self.y() * self.y() + self.z() * self.z() + self.w() * self.w())
+            .sqrt()
+    }
+
+    /// Transform a non-zero magnitude vector into a unity vector
+    pub fn normalize(self) -> Self {
+        let magnitude = self.magnitude();
+        Self {
+            x: self.x / magnitude,
+            y: self.y / magnitude,
+            z: self.z / magnitude,
+            w: self.w / magnitude,
+        }
+    }
 }
 
 impl Add for Tuple {
@@ -108,6 +125,19 @@ impl Mul<f32> for Tuple {
             y: self.y * rhs,
             z: self.z * rhs,
             w: self.w * rhs,
+        }
+    }
+}
+
+impl Div<f32> for Tuple {
+    type Output = Self;
+
+    fn div(self, rhs: f32) -> Self {
+        Self {
+            x: self.x / rhs,
+            y: self.y / rhs,
+            z: self.z / rhs,
+            w: self.w / rhs,
         }
     }
 }
@@ -213,5 +243,36 @@ mod tests {
             Tuple::new(1.0, -2.0, 3.0, -4.0) * 0.5,
             Tuple::new(0.5, -1.0, 1.5, -2.0)
         );
+    }
+
+    #[test]
+    fn test_can_divide_by_a_scalar() {
+        assert_eq!(
+            Tuple::new(1.0, -2.0, 3.0, -4.0) / 2.0,
+            Tuple::new(0.5, -1.0, 1.5, -2.0)
+        );
+    }
+
+    #[test]
+    fn test_can_compute_magnatude_1_vector() {
+        let unity_vectors = [
+            vector!(1.0, 0.0, 0.0),
+            vector!(0.0, 1.0, 0.0),
+            vector!(0.0, 0.0, 1.0),
+        ];
+        for unity in unity_vectors.iter() {
+            assert_eq!(unity.magnitude(), 1.0);
+        }
+    }
+
+    #[test]
+    fn test_can_compute_non_unity_magnitude_vector() {
+        assert_eq!(vector!(1.0, 2.0, 3.0).magnitude(), 14.0_f32.sqrt());
+        assert_eq!(vector!(-1.0, -2.0, -3.0).magnitude(), 14.0_f32.sqrt());
+    }
+
+    #[test]
+    fn test_can_normalize_a_vector() {
+        assert_eq!(vector!(4.0, 0.0, 0.0).normalize(), vector!(1.0, 0.0, 0.0));
     }
 }
