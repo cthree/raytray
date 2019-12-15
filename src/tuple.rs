@@ -14,40 +14,43 @@ macro_rules! vector {
     };
 }
 
+/// Dim is a scalar dimension in space
+pub type Dim = f32;
+
 #[derive(PartialEq, Debug)]
 pub struct Tuple {
-    x: f32,
-    y: f32,
-    z: f32,
-    w: f32,
+    x: Dim,
+    y: Dim,
+    z: Dim,
+    w: Dim,
 }
 
 impl Tuple {
-    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
+    pub fn new(x: Dim, y: Dim, z: Dim, w: Dim) -> Self {
         Self { x, y, z, w }
     }
 
-    pub fn vector(x: f32, y: f32, z: f32) -> Self {
+    pub fn vector(x: Dim, y: Dim, z: Dim) -> Self {
         Self::new(x, y, z, 0.0)
     }
 
-    pub fn point(x: f32, y: f32, z: f32) -> Self {
+    pub fn point(x: Dim, y: Dim, z: Dim) -> Self {
         Self::new(x, y, z, 1.0)
     }
 
-    pub fn x(&self) -> f32 {
+    pub fn x(&self) -> Dim {
         self.x
     }
 
-    pub fn y(&self) -> f32 {
+    pub fn y(&self) -> Dim {
         self.y
     }
 
-    pub fn z(&self) -> f32 {
+    pub fn z(&self) -> Dim {
         self.z
     }
 
-    pub fn w(&self) -> f32 {
+    pub fn w(&self) -> Dim {
         self.w
     }
 
@@ -60,7 +63,7 @@ impl Tuple {
     }
 
     /// Calculate the magnitude (scale) of a vector
-    pub fn magnitude(&self) -> f32 {
+    pub fn magnitude(&self) -> Dim {
         (self.x() * self.x() + self.y() * self.y() + self.z() * self.z() + self.w() * self.w())
             .sqrt()
     }
@@ -76,8 +79,19 @@ impl Tuple {
         }
     }
 
-    pub fn dot(&self, other: Self) -> f32 {
+    /// Calculate the dot product of a vector
+    pub fn dot(&self, other: Self) -> Dim {
         self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
+    }
+
+    /// Compute cross product of a vector
+    pub fn cross(&self, other: Self) -> Self {
+        Self {
+            x: self.y * other.z - self.z * other.y,
+            y: self.z * other.x - self.x * other.z,
+            z: self.x * other.y - self.y * other.x,
+            w: 0.0, // only for vectors
+        }
     }
 }
 
@@ -120,10 +134,10 @@ impl Neg for Tuple {
     }
 }
 
-impl Mul<f32> for Tuple {
+impl Mul<Dim> for Tuple {
     type Output = Self;
 
-    fn mul(self, rhs: f32) -> Self {
+    fn mul(self, rhs: Dim) -> Self {
         Self {
             x: self.x * rhs,
             y: self.y * rhs,
@@ -133,10 +147,10 @@ impl Mul<f32> for Tuple {
     }
 }
 
-impl Div<f32> for Tuple {
+impl Div<Dim> for Tuple {
     type Output = Self;
 
-    fn div(self, rhs: f32) -> Self {
+    fn div(self, rhs: Dim) -> Self {
         Self {
             x: self.x / rhs,
             y: self.y / rhs,
@@ -271,8 +285,8 @@ mod tests {
 
     #[test]
     fn test_can_compute_non_unity_magnitude_vector() {
-        assert_eq!(vector!(1.0, 2.0, 3.0).magnitude(), 14.0_f32.sqrt());
-        assert_eq!(vector!(-1.0, -2.0, -3.0).magnitude(), 14.0_f32.sqrt());
+        assert_eq!(vector!(1.0, 2.0, 3.0).magnitude(), (14.0 as Dim).sqrt());
+        assert_eq!(vector!(-1.0, -2.0, -3.0).magnitude(), (14.0 as Dim).sqrt());
     }
 
     #[test]
@@ -283,5 +297,17 @@ mod tests {
     #[test]
     fn test_can_compute_the_dot_product_of_a_vector() {
         assert_eq!(vector!(1.0, 2.0, 3.0).dot(vector!(2.0, 3.0, 4.0)), 20.0);
+    }
+
+    #[test]
+    fn test_can_compute_cross_product_of_a_vector() {
+        assert_eq!(
+            vector!(1.0, 2.0, 3.0).cross(vector!(2.0, 3.0, 4.0)),
+            vector!(-1.0, 2.0, -1.0)
+        );
+        assert_eq!(
+            vector!(2.0, 3.0, 4.0).cross(vector!(1.0, 2.0, 3.0)),
+            vector!(1.0, -2.0, 1.0)
+        );
     }
 }
