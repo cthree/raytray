@@ -17,81 +17,75 @@ macro_rules! vector {
 /// Dim is a scalar dimension in space
 pub type Dim = f32;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Tuple {
-    x: Dim,
-    y: Dim,
-    z: Dim,
-    w: Dim,
+    dimensions: Vec<Dim>,
 }
 
 impl Tuple {
-    pub fn new(x: Dim, y: Dim, z: Dim, w: Dim) -> Self {
-        Self { x, y, z, w }
+    pub fn new(elements: &[Dim]) -> Self {
+        Self {
+            dimensions: elements.to_vec(),
+        }
     }
 
     pub fn vector(x: Dim, y: Dim, z: Dim) -> Self {
-        Self::new(x, y, z, 0.0)
+        Self::new(&[x, y, z, 0.0])
     }
 
     pub fn point(x: Dim, y: Dim, z: Dim) -> Self {
-        Self::new(x, y, z, 1.0)
+        Self::new(&[x, y, z, 1.0])
     }
 
     pub fn x(&self) -> Dim {
-        self.x
+        self.dimensions[0]
     }
 
     pub fn y(&self) -> Dim {
-        self.y
+        self.dimensions[1]
     }
 
     pub fn z(&self) -> Dim {
-        self.z
+        self.dimensions[2]
     }
 
     pub fn w(&self) -> Dim {
-        self.w
+        self.dimensions[3]
     }
 
     pub fn is_vector(&self) -> bool {
-        self.w == 0.0
+        self.w() == 0.0
     }
 
     pub fn is_point(&self) -> bool {
-        self.w == 1.0
+        self.w() == 1.0
     }
 
-    /// Calculate the magnitude (scale) of a vector
+    /// Calculate the magnitude (scale) of a tuple
     pub fn magnitude(&self) -> Dim {
-        (self.x() * self.x() + self.y() * self.y() + self.z() * self.z() + self.w() * self.w())
-            .sqrt()
+        let summed_squares: Dim = self.dimensions.iter().map(|d| d * d).sum();
+        summed_squares.sqrt()
     }
 
     /// Transform a non-zero magnitude vector into a unity vector
     pub fn normalize(self) -> Self {
         let magnitude = self.magnitude();
         Self {
-            x: self.x / magnitude,
-            y: self.y / magnitude,
-            z: self.z / magnitude,
-            w: self.w / magnitude,
+            dimensions: self.dimensions.iter().map(|d| d / magnitude).collect(),
         }
     }
 
     /// Calculate the dot product of a vector
     pub fn dot(&self, other: Self) -> Dim {
-        self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
+        self.x() * other.x() + self.y() * other.y() + self.z() * other.z() + self.w() * other.w()
     }
 
     /// Compute cross product of a vector
     pub fn cross(&self, other: Self) -> Self {
-        Self {
-            x: self.y * other.z - self.z * other.y,
-            y: self.z * other.x - self.x * other.z,
-            z: self.x * other.y - self.y * other.x,
-            w: 0.0, // only for vectors
-        }
+        let x_x = self.y() * other.z() - self.z() * other.y();
+        let x_y = self.z() * other.x() - self.x() * other.z();
+        let x_z = self.x() * other.y() - self.y() * other.x();
+        Self::vector(x_x, x_y, x_z)
     }
 }
 
@@ -100,10 +94,12 @@ impl Add for Tuple {
 
     fn add(self, other: Self) -> Self {
         Self {
-            x: self.x + other.x,
-            y: self.y + other.y,
-            z: self.z + other.z,
-            w: self.w + other.w,
+            dimensions: self
+                .dimensions
+                .iter()
+                .zip(other.dimensions)
+                .map(|(a, b)| a + b)
+                .collect(),
         }
     }
 }
@@ -113,10 +109,12 @@ impl Sub for Tuple {
 
     fn sub(self, other: Self) -> Self {
         Self {
-            x: self.x - other.x,
-            y: self.y - other.y,
-            z: self.z - other.z,
-            w: self.w - other.w,
+            dimensions: self
+                .dimensions
+                .iter()
+                .zip(other.dimensions)
+                .map(|(a, b)| a - b)
+                .collect(),
         }
     }
 }
@@ -126,10 +124,7 @@ impl Neg for Tuple {
 
     fn neg(self) -> Self {
         Self {
-            x: -self.x,
-            y: -self.y,
-            z: -self.z,
-            w: -self.w,
+            dimensions: self.dimensions.iter().map(|x| -x).collect(),
         }
     }
 }
@@ -139,10 +134,7 @@ impl Mul<Dim> for Tuple {
 
     fn mul(self, rhs: Dim) -> Self {
         Self {
-            x: self.x * rhs,
-            y: self.y * rhs,
-            z: self.z * rhs,
-            w: self.w * rhs,
+            dimensions: self.dimensions.iter().map(|x| x * rhs).collect(),
         }
     }
 }
@@ -152,10 +144,7 @@ impl Div<Dim> for Tuple {
 
     fn div(self, rhs: Dim) -> Self {
         Self {
-            x: self.x / rhs,
-            y: self.y / rhs,
-            z: self.z / rhs,
-            w: self.w / rhs,
+            dimensions: self.dimensions.iter().map(|x| x / rhs).collect(),
         }
     }
 }
@@ -242,32 +231,32 @@ mod tests {
     #[test]
     fn test_can_negate_a_vector() {
         assert_eq!(
-            -Tuple::new(1.0, -2.0, 3.0, -4.0),
-            Tuple::new(-1.0, 2.0, -3.0, 4.0)
+            -Tuple::new(&[1.0, -2.0, 3.0, -4.0]),
+            Tuple::new(&[-1.0, 2.0, -3.0, 4.0])
         );
     }
 
     #[test]
     fn test_can_multiply_a_tuple_by_a_scalar() {
         assert_eq!(
-            Tuple::new(1.0, -2.0, 3.0, -4.0) * 3.5,
-            Tuple::new(3.5, -7.0, 10.5, -14.0)
+            Tuple::new(&[1.0, -2.0, 3.0, -4.0]) * 3.5,
+            Tuple::new(&[3.5, -7.0, 10.5, -14.0])
         );
     }
 
     #[test]
     fn test_can_multiply_by_a_fraction() {
         assert_eq!(
-            Tuple::new(1.0, -2.0, 3.0, -4.0) * 0.5,
-            Tuple::new(0.5, -1.0, 1.5, -2.0)
+            Tuple::new(&[1.0, -2.0, 3.0, -4.0]) * 0.5,
+            Tuple::new(&[0.5, -1.0, 1.5, -2.0])
         );
     }
 
     #[test]
     fn test_can_divide_by_a_scalar() {
         assert_eq!(
-            Tuple::new(1.0, -2.0, 3.0, -4.0) / 2.0,
-            Tuple::new(0.5, -1.0, 1.5, -2.0)
+            Tuple::new(&[1.0, -2.0, 3.0, -4.0]) / 2.0,
+            Tuple::new(&[0.5, -1.0, 1.5, -2.0])
         );
     }
 
