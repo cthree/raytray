@@ -17,13 +17,34 @@ macro_rules! vector {
 /// Dim is a scalar dimension in space
 pub type Dim = f32;
 
+pub trait Vector {
+    fn normalize(self) -> Self;
+    fn dot(&self, other: Self) -> Dim;
+    fn cross(&self, other: Self) -> Self;
+}
+
+pub trait Point {}
+
+pub trait Coordinate: Vector + Point {
+    fn x(&self) -> Dim;
+    fn y(&self) -> Dim;
+    fn z(&self) -> Dim;
+    fn w(&self) -> Dim;
+    fn is_vector(&self) -> bool {
+        self.w() == 0.0
+    }
+    fn is_point(&self) -> bool {
+        self.w() == 1.0
+    }
+}
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct Tuple {
     dimensions: Vec<Dim>,
 }
 
 impl Tuple {
-    pub fn new(elements: &[Dim]) -> Self {
+    fn new(elements: &[Dim]) -> Self {
         Self {
             dimensions: elements.to_vec(),
         }
@@ -37,38 +58,36 @@ impl Tuple {
         Self::new(&[x, y, z, 1.0])
     }
 
-    pub fn x(&self) -> Dim {
-        self.dimensions[0]
-    }
-
-    pub fn y(&self) -> Dim {
-        self.dimensions[1]
-    }
-
-    pub fn z(&self) -> Dim {
-        self.dimensions[2]
-    }
-
-    pub fn w(&self) -> Dim {
-        self.dimensions[3]
-    }
-
-    pub fn is_vector(&self) -> bool {
-        self.w() == 0.0
-    }
-
-    pub fn is_point(&self) -> bool {
-        self.w() == 1.0
-    }
-
     /// Calculate the magnitude (scale) of a tuple
     pub fn magnitude(&self) -> Dim {
         let summed_squares: Dim = self.dimensions.iter().map(|d| d * d).sum();
         summed_squares.sqrt()
     }
+}
 
+impl Coordinate for Tuple {
+    fn x(&self) -> Dim {
+        self.dimensions[0]
+    }
+
+    fn y(&self) -> Dim {
+        self.dimensions[1]
+    }
+
+    fn z(&self) -> Dim {
+        self.dimensions[2]
+    }
+
+    fn w(&self) -> Dim {
+        self.dimensions[3]
+    }
+}
+
+impl Point for Tuple {}
+
+impl Vector for Tuple {
     /// Transform a non-zero magnitude vector into a unity vector
-    pub fn normalize(self) -> Self {
+    fn normalize(self) -> Self {
         let magnitude = self.magnitude();
         Self {
             dimensions: self.dimensions.iter().map(|d| d / magnitude).collect(),
@@ -76,12 +95,12 @@ impl Tuple {
     }
 
     /// Calculate the dot product of a vector
-    pub fn dot(&self, other: Self) -> Dim {
+    fn dot(&self, other: Self) -> Dim {
         self.x() * other.x() + self.y() * other.y() + self.z() * other.z() + self.w() * other.w()
     }
 
     /// Compute cross product of a vector
-    pub fn cross(&self, other: Self) -> Self {
+    fn cross(&self, other: Self) -> Self {
         let x_x = self.y() * other.z() - self.z() * other.y();
         let x_y = self.z() * other.x() - self.x() * other.z();
         let x_z = self.x() * other.y() - self.y() * other.x();
