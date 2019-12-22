@@ -65,6 +65,19 @@ impl Tuple {
     }
 }
 
+const EPSILON: Dim = 0.0001;
+
+impl PartialEq for Tuple {
+    fn eq(&self, other: &Self) -> bool {
+        for (a, b) in other.dimensions.iter().zip(self.dimensions.iter()) {
+            if (a - b).abs() > EPSILON {
+                return false;
+            }
+        }
+        true
+    }
+}
+
 impl Coordinate for Tuple {
     fn x(&self) -> Dim {
         self.dimensions[0]
@@ -171,6 +184,18 @@ impl Div<Dim> for Tuple {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_similar_tuples_are_equal() {
+        assert_eq!(
+            true,
+            vector!(0.0, -0.0, 1.0) == vector!(0.00001, -0.00001, 1.00001)
+        );
+        assert_eq!(
+            false,
+            vector!(0.0, -0.0, 1.0) == vector!(0.9999, -0.9999, 1.9999)
+        );
+    }
 
     #[test]
     fn test_w_is_0_for_a_vector() {
