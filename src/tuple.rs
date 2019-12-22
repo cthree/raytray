@@ -14,6 +14,12 @@ macro_rules! vector {
     };
 }
 
+macro_rules! color {
+    ($r:expr, $g:expr, $b:expr) => {
+        Tuple::color($r, $g, $b);
+    };
+}
+
 /// Dim is a scalar dimension in space
 pub type Dim = f32;
 
@@ -21,9 +27,16 @@ pub trait Vector {
     fn normalize(self) -> Self;
     fn dot(&self, other: Self) -> Dim;
     fn cross(&self, other: Self) -> Self;
+    fn magnitude(&self) -> Dim;
 }
 
 pub trait Point {}
+
+pub trait Color {
+    fn red(&self) -> Dim;
+    fn blue(&self) -> Dim;
+    fn green(&self) -> Dim;
+}
 
 pub trait Coordinate: Vector + Point {
     fn x(&self) -> Dim;
@@ -38,7 +51,7 @@ pub trait Coordinate: Vector + Point {
     }
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct Tuple {
     dimensions: Vec<Dim>,
 }
@@ -58,10 +71,8 @@ impl Tuple {
         Self::new(&[x, y, z, 1.0])
     }
 
-    /// Calculate the magnitude (scale) of a tuple
-    pub fn magnitude(&self) -> Dim {
-        let summed_squares: Dim = self.dimensions.iter().map(|d| d * d).sum();
-        summed_squares.sqrt()
+    pub fn color(red: Dim, green: Dim, blue: Dim) -> Self {
+        Self::new(&[red, green, blue])
     }
 }
 
@@ -99,6 +110,12 @@ impl Coordinate for Tuple {
 impl Point for Tuple {}
 
 impl Vector for Tuple {
+    /// Compute the magnitude (scale) of a vector
+    fn magnitude(&self) -> Dim {
+        let summed_squares: Dim = self.dimensions.iter().map(|d| d * d).sum();
+        summed_squares.sqrt()
+    }
+
     /// Transform a non-zero magnitude vector into a unity vector
     fn normalize(self) -> Self {
         let magnitude = self.magnitude();
@@ -107,17 +124,31 @@ impl Vector for Tuple {
         }
     }
 
-    /// Calculate the dot product of a vector
+    /// Compute the dot product of a vector
     fn dot(&self, other: Self) -> Dim {
         self.x() * other.x() + self.y() * other.y() + self.z() * other.z() + self.w() * other.w()
     }
 
-    /// Compute cross product of a vector
+    /// Compute the cross product of a vector
     fn cross(&self, other: Self) -> Self {
         let x_x = self.y() * other.z() - self.z() * other.y();
         let x_y = self.z() * other.x() - self.x() * other.z();
         let x_z = self.x() * other.y() - self.y() * other.x();
         Self::vector(x_x, x_y, x_z)
+    }
+}
+
+impl Color for Tuple {
+    fn red(&self) -> Dim {
+        self.dimensions[0]
+    }
+
+    fn green(&self) -> Dim {
+        self.dimensions[1]
+    }
+
+    fn blue(&self) -> Dim {
+        self.dimensions[2]
     }
 }
 
@@ -157,6 +188,21 @@ impl Neg for Tuple {
     fn neg(self) -> Self {
         Self {
             dimensions: self.dimensions.iter().map(|x| -x).collect(),
+        }
+    }
+}
+
+impl Mul for Tuple {
+    type Output = Self;
+
+    fn mul(self, other: Self) -> Self {
+        Self {
+            dimensions: self
+                .dimensions
+                .iter()
+                .zip(other.dimensions.iter())
+                .map(|(a, b)| a * b)
+                .collect(),
         }
     }
 }
@@ -249,11 +295,12 @@ mod tests {
     }
 
     #[test]
-    fn test_can_subtract_two_points() {
+    fn test_can_subtract_two_tuples() {
         assert_eq!(
             point!(3.0, 2.0, 1.0) - point!(5.0, 6.0, 7.0),
             vector!(-2.0, -4.0, -6.0)
         );
+        assert!(vector!(-2.3, 1.4, -32.6) != point!(3.0, 2.0, 1.0) - point!(5.0, 6.0, 7.0));
     }
 
     #[test]
@@ -290,18 +337,14 @@ mod tests {
 
     #[test]
     fn test_can_multiply_by_a_fraction() {
-        assert_eq!(
-            Tuple::new(&[1.0, -2.0, 3.0, -4.0]) * 0.5,
-            Tuple::new(&[0.5, -1.0, 1.5, -2.0])
-        );
+        assert!(Tuple::new(&[0.5, -1.0, 1.5, -2.0]) == Tuple::new(&[1.0, -2.0, 3.0, -4.0]) * 0.5);
+        assert!(Tuple::new(&[-5.0, 0.1, -5.1, 0.2]) != Tuple::new(&[1.0, -2.0, 3.0, -4.0]) * 0.5);
     }
 
     #[test]
     fn test_can_divide_by_a_scalar() {
-        assert_eq!(
-            Tuple::new(&[1.0, -2.0, 3.0, -4.0]) / 2.0,
-            Tuple::new(&[0.5, -1.0, 1.5, -2.0])
-        );
+        assert!(Tuple::new(&[0.5, -1.0, 1.5, -2.0]) == Tuple::new(&[1.0, -2.0, 3.0, -4.0]) / 2.0);
+        assert!(Tuple::new(&[-0.5, 1.0, -1.5, 2.0]) != Tuple::new(&[1.0, -2.0, 3.0, -4.0]) / 2.0);
     }
 
     #[test]
@@ -312,35 +355,68 @@ mod tests {
             vector!(0.0, 0.0, 1.0),
         ];
         for unity in unity_vectors.iter() {
-            assert_eq!(unity.magnitude(), 1.0);
+            assert!(1.0 == unity.magnitude());
+            assert!(0.1 != unity.magnitude());
         }
     }
 
     #[test]
     fn test_can_compute_non_unity_magnitude_vector() {
-        assert_eq!(vector!(1.0, 2.0, 3.0).magnitude(), (14.0 as Dim).sqrt());
-        assert_eq!(vector!(-1.0, -2.0, -3.0).magnitude(), (14.0 as Dim).sqrt());
+        assert!((14.0 as Dim).sqrt() == vector!(1.0, 2.0, 3.0).magnitude());
+        assert!((14.0 as Dim).sqrt() == vector!(-1.0, -2.0, -3.0).magnitude());
+        assert!((41.0 as Dim).sqrt() != vector!(1.0, 2.0, -3.0).magnitude());
     }
 
     #[test]
     fn test_can_normalize_a_vector() {
-        assert_eq!(vector!(4.0, 0.0, 0.0).normalize(), vector!(1.0, 0.0, 0.0));
+        assert!(vector!(1.0, 0.0, 0.0) == vector!(4.0, 0.0, 0.0).normalize());
+        assert!(vector!(4.0, 0.0, 0.0) != vector!(4.0, 0.0, 0.0).normalize());
     }
 
     #[test]
     fn test_can_compute_the_dot_product_of_a_vector() {
-        assert_eq!(vector!(1.0, 2.0, 3.0).dot(vector!(2.0, 3.0, 4.0)), 20.0);
+        assert!(20.0 == vector!(1.0, 2.0, 3.0).dot(vector!(2.0, 3.0, 4.0)));
+        assert!(-5.2 != vector!(1.0, 2.0, 3.0).dot(vector!(2.0, 3.0, 4.0)));
     }
 
     #[test]
     fn test_can_compute_cross_product_of_a_vector() {
-        assert_eq!(
-            vector!(1.0, 2.0, 3.0).cross(vector!(2.0, 3.0, 4.0)),
-            vector!(-1.0, 2.0, -1.0)
-        );
-        assert_eq!(
-            vector!(2.0, 3.0, 4.0).cross(vector!(1.0, 2.0, 3.0)),
-            vector!(1.0, -2.0, 1.0)
-        );
+        assert!(vector!(1.0, -2.0, 1.0) == vector!(2.0, 3.0, 4.0).cross(vector!(1.0, 2.0, 3.0)));
+        assert!(vector!(-0.1, 0.2, -0.1) != vector!(2.0, 3.0, 4.0).cross(vector!(1.0, 2.0, 3.0)));
+    }
+
+    #[test]
+    fn test_colors_have_red_green_and_blue_components() {
+        let color = Tuple::color(0.43, 0.51, 1.1);
+        assert!(0.43 == color.red());
+        assert!(0.34 != color.red());
+        assert!(0.51 == color.green());
+        assert!(0.15 != color.green());
+        assert!(1.1 == color.blue());
+        assert!(0.0 != color.blue());
+    }
+
+    #[test]
+    fn test_can_add_colors() {
+        assert!(color!(1.6, 0.7, 1.0) == color!(0.9, 0.6, 0.75) + color!(0.7, 0.1, 0.25));
+        assert!(color!(0.0, 0.5, 1.0) != color!(0.9, 0.6, 0.75) + color!(0.7, 0.1, 0.25));
+    }
+
+    #[test]
+    fn test_can_subtract_colors() {
+        assert!(color!(0.2, 0.5, 0.5) == color!(0.9, 0.6, 0.75) - color!(0.7, 0.1, 0.25));
+        assert!(color!(1.6, 0.7, 1.0) != color!(0.9, 0.6, 0.75) - color!(0.7, 0.1, 0.25));
+    }
+
+    #[test]
+    fn test_can_multiply_colors_for_hadamard_product() {
+        assert!(color!(0.9, 0.2, 0.04) == color!(1.0, 0.2, 0.4) * color!(0.9, 1.0, 0.1));
+        assert!(color!(1.9, 1.2, 1.04) != color!(1.0, 0.2, 0.4) * color!(0.9, 1.0, 0.1));
+    }
+
+    #[test]
+    fn test_can_multiply_colors_by_a_scalar() {
+        assert!(color!(0.4, 0.6, 0.8) == color!(0.2, 0.3, 0.4) * 2.0);
+        assert!(color!(0.1, 1.5, 0.2) != color!(0.2, 0.3, 0.4) * 2.0);
     }
 }
