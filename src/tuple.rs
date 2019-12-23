@@ -36,6 +36,7 @@ pub trait Color {
     fn red(&self) -> Dim;
     fn blue(&self) -> Dim;
     fn green(&self) -> Dim;
+    fn as_rgb_bytes(&self) -> [u8;3];
 }
 
 pub trait Coordinate: Vector + Point {
@@ -149,6 +150,10 @@ impl Color for Tuple {
 
     fn blue(&self) -> Dim {
         self.dimensions[2]
+    }
+
+    fn as_rgb_bytes(&self) -> [u8;3] {
+        [(self.red() * 255.0).round() as u8, (self.green() * 255.0).round() as u8, (self.blue() * 255.0).round() as u8]
     }
 }
 
