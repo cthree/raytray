@@ -22,7 +22,7 @@ impl Row {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct Pixel(usize, usize);
+pub struct Pixel(pub usize, pub usize);
 
 impl From<Tuple> for Pixel {
     fn from(point: Tuple) -> Self {
@@ -53,9 +53,9 @@ impl Canvas {
         }
     }
 
-    pub fn set_pixel(&mut self, row: usize, col: usize, color: Tuple) {
-        if let Some(row) = self.rows.get_mut(row) {
-            row.set_pixel(col, color);
+    pub fn set_pixel(&mut self, position: Pixel, color: Tuple) {
+        if let Some(row) = self.rows.get_mut(position.0) {
+            row.set_pixel(position.1, color);
         }
     }
 
@@ -131,7 +131,7 @@ mod tests {
     #[test]
     fn test_can_set_a_canvas_pixel_to_a_color() {
         let mut canvas = Canvas::new(10, 20);
-        canvas.set_pixel(4, 14, Tuple::color(1.0, 1.0, 1.0));
+        canvas.set_pixel(Pixel(4, 14), Tuple::color(1.0, 1.0, 1.0));
         let row = &canvas.rows[4];
         assert_eq!(Tuple::color(1.0, 1.0, 1.0), row.pixels[14]);
         let other_row = &canvas.rows[6];
@@ -141,7 +141,7 @@ mod tests {
     #[test]
     fn test_can_index_into_a_canvas_with_a_pixel() {
         let mut canvas = Canvas::new(10, 20);
-        canvas.set_pixel(4, 14, Tuple::color(1.0, 1.0, 1.0));
+        canvas.set_pixel(Pixel(4, 14), Tuple::color(1.0, 1.0, 1.0));
         assert_eq!(Tuple::color(1.0, 1.0, 1.0), canvas[Pixel(4, 14)]);
     }
 
@@ -161,7 +161,7 @@ mod tests {
         let canvas = Canvas::new(10, 20);
         let ppm = Ppm::from(&canvas);
         assert_eq!(
-            format!("P3\n{} {}\n255\n", canvas.width(), canvas.height()),
+            format!("P3\n{} {}\n255", canvas.width(), canvas.height()),
             ppm.header()
         );
     }
@@ -169,7 +169,7 @@ mod tests {
     fn test_ppm(width: usize, height: usize) -> Ppm {
         let mut canvas = Canvas::new(width, height);
         for step in 0..width {
-            canvas.set_pixel(step, step, Tuple::color(1.0, 1.0, 1.0));
+            canvas.set_pixel(Pixel(step, step), Tuple::color(1.0, 1.0, 1.0));
         }
         let ppm = Ppm::from(&canvas);
         ppm

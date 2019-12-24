@@ -16,7 +16,7 @@ impl Ppm {
     }
 
     pub fn header(&self) -> String {
-        format!("P3\n{} {}\n255\n", self.width, self.height)
+        format!("P3\n{} {}\n255", self.width, self.height)
     }
 
     pub fn body(&self) -> &[u8] {

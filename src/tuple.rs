@@ -1,5 +1,6 @@
 #![allow(unused_macros, dead_code)]
 
+use std::fmt;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 macro_rules! point {
@@ -36,7 +37,7 @@ pub trait Color {
     fn red(&self) -> Dim;
     fn blue(&self) -> Dim;
     fn green(&self) -> Dim;
-    fn as_rgb_bytes(&self) -> [u8;3];
+    fn as_rgb_bytes(&self) -> [u8; 3];
 }
 
 pub trait Coordinate: Vector + Point {
@@ -152,8 +153,12 @@ impl Color for Tuple {
         self.dimensions[2]
     }
 
-    fn as_rgb_bytes(&self) -> [u8;3] {
-        [(self.red() * 255.0).round() as u8, (self.green() * 255.0).round() as u8, (self.blue() * 255.0).round() as u8]
+    fn as_rgb_bytes(&self) -> [u8; 3] {
+        [
+            (self.red() * 255.0).round() as u8,
+            (self.green() * 255.0).round() as u8,
+            (self.blue() * 255.0).round() as u8,
+        ]
     }
 }
 
@@ -229,6 +234,17 @@ impl Div<Dim> for Tuple {
         Self {
             dimensions: self.dimensions.iter().map(|x| x / rhs).collect(),
         }
+    }
+}
+
+impl fmt::Display for Tuple {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let out_vec: Vec<_> = self
+            .dimensions
+            .iter()
+            .map(|d| format!("{:.4}", d))
+            .collect();
+        write!(f, "<{}>", out_vec.join(", "))
     }
 }
 
@@ -423,5 +439,13 @@ mod tests {
     fn test_can_multiply_colors_by_a_scalar() {
         assert!(color!(0.4, 0.6, 0.8) == color!(0.2, 0.3, 0.4) * 2.0);
         assert!(color!(0.1, 1.5, 0.2) != color!(0.2, 0.3, 0.4) * 2.0);
+    }
+
+    #[test]
+    fn test_can_display_tuple() {
+        assert_eq!(
+            "<0.1000, 0.0001, 1.0000, 0.0000>",
+            format!("{}", vector!(0.1, 0.0001, 1.00000000))
+        );
     }
 }
