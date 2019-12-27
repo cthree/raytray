@@ -3,7 +3,7 @@ use textwrap;
 pub struct Ppm {
     width: usize,
     height: usize,
-    body: Box<Vec<u8>>,
+    body: Vec<u8>,
 }
 
 impl Ppm {
@@ -11,7 +11,7 @@ impl Ppm {
         Ppm {
             width,
             height,
-            body: Box::new(body),
+            body,
         }
     }
 
@@ -25,6 +25,10 @@ impl Ppm {
 
     pub fn len(&self) -> usize {
         self.body.len() / 3
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.body.len() == 0
     }
 }
 

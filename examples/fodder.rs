@@ -2,28 +2,28 @@
 //! output its position at each `tick` until it hits the ground (the Y
 //! coordinate is less than zero).
 //!
-use raytray::tuple::{Tuple, Coordinate, Vector};
+use raytray::units::{Point3D, Vector3D};
 
 #[derive(Debug, Clone)]
 struct Projectile {
-    position: Tuple,
-    velocity: Tuple,
+    position: Point3D,
+    velocity: Vector3D,
 }
 
 struct World {
-    gravity: Tuple,
-    wind: Tuple,
+    gravity: Vector3D,
+    wind: Vector3D,
 }
 
 fn main() {
     let env = World {
-        gravity: Tuple::vector(0.0, -0.1, 0.0),
-        wind: Tuple::vector(-0.01, 0.0, 0.0),
+        gravity: Vector3D::new(0.0, -0.1, 0.0),
+        wind: Vector3D::new(-0.01, 0.0, 0.0),
     };
 
     let mut ball = Projectile {
-        position: Tuple::point(0.0, 1.0, 0.0),
-        velocity: Tuple::vector(1.0, 1.0, 0.0).normalize(),
+        position: Point3D::new(0.0, 1.0, 0.0),
+        velocity: Vector3D::new(1.0, 1.0, 0.0).normalize(),
     };
 
     println!("BANG!");
@@ -40,7 +40,7 @@ fn main() {
 
 fn tick(proj: Projectile, env: &World) -> Projectile {
     Projectile {
-        position: proj.position.clone() + proj.velocity.clone(),
-        velocity: proj.velocity + env.gravity.clone() + env.wind.clone(),
+        position: proj.position + proj.velocity,
+        velocity: proj.velocity + env.gravity + env.wind,
     }
 }

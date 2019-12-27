@@ -3,41 +3,45 @@
 //! coordinate is less than zero). Output the path plot as a PPM format
 //! image file `fodder_plot.ppm`.
 //!
-use raytray::tuple::{Tuple, Coordinate, Vector};
 use raytray::canvas::{Canvas, Pixel};
+use raytray::color::Color;
+use raytray::units::{Point3D, Vector3D};
 use std::io::prelude::*;
 
 #[derive(Debug, Clone)]
 struct Projectile {
-    position: Tuple,
-    velocity: Tuple,
+    position: Point3D,
+    velocity: Vector3D,
 }
 
 struct World {
-    gravity: Tuple,
-    wind: Tuple,
+    gravity: Vector3D,
+    wind: Vector3D,
 }
 
 fn main() -> std::io::Result<()> {
     let env = World {
-        gravity: Tuple::vector(0.0, -0.1, 0.0),
-        wind: Tuple::vector(-0.01, 0.0, 0.0),
+        gravity: Vector3D::new(0.0, -0.1, 0.0),
+        wind: Vector3D::new(-0.01, 0.0, 0.0),
     };
 
+    let starting_point = Point3D::new(0.0, 1.0, 0.0);
+    let starting_velocity = Vector3D::new(1.0, 1.8, 0.0).normalize() * 11.25;
     let mut ball = Projectile {
-        position: Tuple::point(0.0, 1.0, 0.0),
-        velocity: Tuple::vector(1.0, 1.0, 0.0).normalize(),
+        position: starting_point,
+        velocity: starting_velocity,
     };
 
-    let mut canvas = Canvas::new(10, 10);
+    let mut canvas = Canvas::new(900, 550);
 
     loop {
-        ball = tick(ball.clone(), &env);
-        canvas.set_pixel(Pixel::from(ball.position.clone()), Tuple::color(1.0, 1.0, 1.0));
-        if ball.position.y() <= 0.0 {
+        ball = tick(ball, &env);
+        //  Save the plot when the ball moves outside the canvas
+        if !canvas.in_bounds(ball.position) {
             write_ppm_file(&canvas)?;
             break;
         }
+        canvas.set_pixel(Pixel::from(ball.position), Color::rgb(1.0, 0.5, 0.5));
     }
 
     Ok(())
@@ -45,8 +49,8 @@ fn main() -> std::io::Result<()> {
 
 fn tick(proj: Projectile, env: &World) -> Projectile {
     Projectile {
-        position: proj.position.clone() + proj.velocity.clone(),
-        velocity: proj.velocity + env.gravity.clone() + env.wind.clone(),
+        position: proj.position + proj.velocity,
+        velocity: proj.velocity + env.gravity + env.wind,
     }
 }
 
@@ -54,6 +58,7 @@ fn write_ppm_file(canvas: &Canvas) -> std::io::Result<()> {
     use raytray::ppm::Ppm;
     use std::fs::File;
 
-    let ppm = format!("{}", Ppm::from(canvas));
+    let drawing_canvas = canvas.clone().flip_vertical();
+    let ppm = format!("{}", Ppm::from(&drawing_canvas));
     File::create("fodder_plot.ppm")?.write_all(ppm.as_bytes())
 }
