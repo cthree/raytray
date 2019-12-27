@@ -3,9 +3,10 @@
 //! coordinate is less than zero). Output the path plot as a PPM format
 //! image file `fodder_plot.ppm`.
 //!
-use raytray::canvas::{Canvas, Pixel};
+use raytray::canvas::{Canvas, Pixel, Ppm};
 use raytray::color::Color;
 use raytray::units::{Point3D, Vector3D};
+use std::fs::File;
 use std::io::prelude::*;
 
 #[derive(Debug, Clone)]
@@ -55,10 +56,6 @@ fn tick(proj: Projectile, env: &World) -> Projectile {
 }
 
 fn write_ppm_file(canvas: &Canvas) -> std::io::Result<()> {
-    use raytray::ppm::Ppm;
-    use std::fs::File;
-
-    let drawing_canvas = canvas.clone().flip_vertical();
-    let ppm = format!("{}", Ppm::from(&drawing_canvas));
+    let ppm = format!("{}", Ppm::from(canvas));
     File::create("fodder_plot.ppm")?.write_all(ppm.as_bytes())
 }

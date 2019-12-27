@@ -1,8 +1,7 @@
-#![allow(unused_macros, dead_code)]
-
 use crate::color::Color;
-use crate::ppm::Ppm;
 use crate::units::Point3D;
+use std::fmt;
+use textwrap;
 
 #[derive(Debug, Clone)]
 struct Row {
@@ -98,16 +97,6 @@ impl Canvas {
         let pixel: Pixel = position.into();
         pixel.x() < self.width() && pixel.y() < self.height()
     }
-
-    pub fn flip_vertical(self) -> Self {
-        let mut reversed_rows = self.rows.clone();
-        reversed_rows.reverse();
-        Self {
-            height: self.height,
-            width: self.width,
-            rows: reversed_rows,
-        }
-    }
 }
 
 impl std::ops::Index<Pixel> for Canvas {
@@ -118,19 +107,64 @@ impl std::ops::Index<Pixel> for Canvas {
     }
 }
 
+pub struct Ppm {
+    width: usize,
+    height: usize,
+    body: Vec<u8>,
+}
+
+impl Ppm {
+    pub fn new(width: usize, height: usize, body: Vec<u8>) -> Self {
+        Ppm {
+            width,
+            height,
+            body,
+        }
+    }
+
+    pub fn header(&self) -> String {
+        format!("P3\n{} {}\n255", self.width, self.height)
+    }
+
+    pub fn body(&self) -> &[u8] {
+        self.body.as_slice()
+    }
+
+    pub fn len(&self) -> usize {
+        self.body.len() / 3
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.body.len() == 0
+    }
+}
+
 impl From<&Canvas> for Ppm {
-    fn from(canvas: &Canvas) -> Ppm {
-        let width = canvas.width();
-        let height = canvas.height();
-        let mut data = Vec::with_capacity(width * height * 3);
-        for row in canvas.rows.iter() {
+    fn from(canvas: &Canvas) -> Self {
+        let width = canvas.width;
+        let height = canvas.height;
+        let mut data: Vec<u8> = Vec::with_capacity(width * height * 3);
+        for row in canvas.rows.iter().rev() {
             for pixel in row.pixels.iter() {
                 for color in pixel.as_rgb_bytes().iter() {
-                    data.push(color.clone());
+                    data.push(*color);
                 }
             }
         }
-        Ppm::new(width, height, data)
+
+        Self {
+            width,
+            height,
+            body: data,
+        }
+    }
+}
+
+impl fmt::Display for Ppm {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s_values: Vec<_> = self.body.iter().map(|c| format!("{}", c)).collect();
+        let body = s_values.join(" ");
+        write!(f, "{}\n{}\n", self.header(), textwrap::fill(&body, 70))
     }
 }
 
@@ -216,26 +250,6 @@ mod tests {
     }
 
     #[test]
-    fn test_constructs_ppm_pixel_data() {
-        let width = 5;
-        let height = 5;
-        let ppm = test_ppm(width, height);
-        let body = ppm.body();
-        // The PPM body should have the correct number of values
-        assert_eq!(width * height, ppm.len());
-        // The first pixel of the first row should we white
-        assert_eq!(255, body[0]);
-        assert_eq!(255, body[1]);
-        assert_eq!(255, body[2]);
-        // Sonity check that they aren't all white
-        assert_eq!(0, body[3]);
-        // The second pixel of the second row should be white
-        assert_eq!(255, body[3 * width + 3]);
-        assert_eq!(255, body[3 * width + 4]);
-        assert_eq!(255, body[3 * width + 5]);
-    }
-
-    #[test]
     fn test_ppm_output_includes_header() {
         let width = 5;
         let height = 5;
@@ -271,20 +285,5 @@ mod tests {
         assert!(!canvas.in_bounds(Point3D::new(9.0, 10.0, 9.0)));
         assert!(!canvas.in_bounds(Point3D::new(10.0, 9.0, 9.0)));
         assert!(!canvas.in_bounds(Point3D::new(10.0, 10.0, 10.0)));
-    }
-
-    #[test]
-    fn test_flips_pixels_vertically() {
-        let mut canvas = Canvas::new(20, 20);
-        // set the second row to be all white
-        for col in 0..20 {
-            canvas.set_pixel(Pixel(col, 1), Color::rgb(1.0, 1.0, 1.0));
-        }
-        let reversed_canvas = canvas.flip_vertical();
-        // the second last row should be white when fipped vertically
-        assert_eq!(Color::rgb(0.0, 0.0, 0.0), reversed_canvas[Pixel(0, 1)]);
-        assert_eq!(Color::rgb(1.0, 1.0, 1.0), reversed_canvas[Pixel(0, 18)]);
-        assert_eq!(Color::rgb(0.0, 0.0, 0.0), reversed_canvas[Pixel(0, 19)]);
-        assert_eq!(Color::rgb(0.0, 0.0, 0.0), reversed_canvas[Pixel(0, 17)]);
     }
 }
