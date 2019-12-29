@@ -1,6 +1,8 @@
 use std::fmt;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
+pub const EPSILON: f32 = 0.00001;
+
 pub type Unit3D = f32;
 
 // ==========================================================================
@@ -174,7 +176,6 @@ impl fmt::Display for Point3D {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{f32, f64};
 
     #[test]
     fn test_creates_a_point_of_floats() {
@@ -254,28 +255,28 @@ mod tests {
         assert_eq!(1.0, Vector3D(1.0, 0.0, 0.0).magnitude());
         assert_eq!(1.0, Vector3D(0.0, 1.0, 0.0).magnitude());
         assert_eq!(1.0, Vector3D(0.0, 0.0, 1.0).magnitude());
-        assert!(14.0_f32.sqrt() - Vector3D(1.0, 2.0, 3.0).magnitude() <= f32::EPSILON);
-        assert!(14.0_f32.sqrt() - Vector3D(-1.0, -2.0, -3.0).magnitude() <= f32::EPSILON);
-        assert!(14.0_f64.sqrt() - Vector3D(1.0, 2.0, 3.0).magnitude() as f64 <= f64::EPSILON);
+        assert!(14.0_f32.sqrt() - Vector3D(1.0, 2.0, 3.0).magnitude() <= EPSILON);
+        assert!(14.0_f32.sqrt() - Vector3D(-1.0, -2.0, -3.0).magnitude() <= EPSILON);
+        assert!(14.0_f64.sqrt() as f32 - Vector3D(1.0, 2.0, 3.0).magnitude() <= EPSILON);
     }
 
     #[test]
     fn test_can_normalize_a_vector() {
         assert_eq!(Vector3D(1.0, 0.0, 0.0), Vector3D(4.0, 0.0, 0.0).normalize());
         let vector = Vector3D(1.0, 2.0, 3.0).normalize();
-        assert!(1.0 / 14.0_f32.sqrt() - vector.x() <= f32::EPSILON);
-        assert!(2.0 / 14.0_f32.sqrt() - vector.y() <= f32::EPSILON);
-        assert!(3.0 / 14.0_f32.sqrt() - vector.z() <= f32::EPSILON);
+        assert!(1.0 / 14.0_f32.sqrt() - vector.x() <= EPSILON);
+        assert!(2.0 / 14.0_f32.sqrt() - vector.y() <= EPSILON);
+        assert!(3.0 / 14.0_f32.sqrt() - vector.z() <= EPSILON);
     }
 
     #[test]
     fn test_the_magnitude_of_a_normalized_vector_is_1() {
-        assert!(Vector3D(1.0, 0.0, 0.0).normalize().magnitude() - 1.0 <= f32::EPSILON);
-        assert!(Vector3D(0.0, 1.0, 0.0).normalize().magnitude() - 1.0 <= f32::EPSILON);
-        assert!(Vector3D(0.0, 0.0, 1.0).normalize().magnitude() - 1.0 <= f32::EPSILON);
-        assert!(Vector3D(0.0, 0.0, 4.0).normalize().magnitude() - 1.0 <= f32::EPSILON);
-        assert!(Vector3D(1.0, 2.0, 3.0).normalize().magnitude() - 1.0 <= f32::EPSILON);
-        assert!(Vector3D(-1.0, -2.0, -3.0).normalize().magnitude() - 1.0 <= f32::EPSILON);
+        assert!(Vector3D(1.0, 0.0, 0.0).normalize().magnitude() - 1.0 <= EPSILON);
+        assert!(Vector3D(0.0, 1.0, 0.0).normalize().magnitude() - 1.0 <= EPSILON);
+        assert!(Vector3D(0.0, 0.0, 1.0).normalize().magnitude() - 1.0 <= EPSILON);
+        assert!(Vector3D(0.0, 0.0, 4.0).normalize().magnitude() - 1.0 <= EPSILON);
+        assert!(Vector3D(1.0, 2.0, 3.0).normalize().magnitude() - 1.0 <= EPSILON);
+        assert!(Vector3D(-1.0, -2.0, -3.0).normalize().magnitude() - 1.0 <= EPSILON);
     }
 
     #[test]
