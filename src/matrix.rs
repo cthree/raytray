@@ -1,10 +1,10 @@
-use crate::units::{Point3D, Unit3D, Vector3D, EPSILON};
+use crate::units::{Point3D, Tuple, TupleMut, Unit3D, EPSILON};
 use std::ops::{Index, IndexMut, Mul, Rem};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Matrix([[Unit3D; 4]; 4]);
 
-pub const IDENTITY: Matrix = Matrix([
+const IDENTITY: Matrix = Matrix([
     [1.0, 0.0, 0.0, 0.0],
     [0.0, 1.0, 0.0, 0.0],
     [0.0, 0.0, 1.0, 0.0],
@@ -12,6 +12,20 @@ pub const IDENTITY: Matrix = Matrix([
 ]);
 
 impl Matrix {
+    /// Create a new Matrix from `values`
+    pub fn new(values: [[Unit3D; 4]; 4]) -> Self {
+        Self(values)
+    }
+
+    /// Create a translation matrix for a tuple
+    pub fn translation<T: Tuple>(point: T) -> Self {
+        let mut translation = IDENTITY;
+        translation[0][3] = point.x();
+        translation[1][3] = point.y();
+        translation[2][3] = point.z();
+        translation
+    }
+
     /// Transpose the rows and columns of the Matrix such that the element
     /// as `[2,3]` is at `[3,2]` in the resulting Matrix. The original Matrix
     /// is consumed and a new one returned in its place.
@@ -152,33 +166,34 @@ impl Mul for Matrix {
     }
 }
 
-impl Mul<Point3D> for Matrix {
-    type Output = Point3D;
+impl<T: TupleMut + Clone> Mul<T> for Matrix {
+    type Output = T;
 
-    fn mul(self, rhs: Point3D) -> Self::Output {
+    fn mul(self, rhs: T) -> Self::Output {
+        // Since we don't know what type T is we can't create a new object but
+        // we can infer its type by mutably cloning the original object.
+        let mut out = rhs.clone();
         let mut product = [0.0; 4];
         for row in 0..4 {
             product[row] = self[row][0] * rhs.x()
                 + self[row][1] * rhs.y()
                 + self[row][2] * rhs.z()
-                + self[row][3] * 1.0;
+                + self[row][3] * rhs.w();
         }
-        Point3D::new(product[0], product[1], product[2])
+        out.set_x(product[0]);
+        out.set_y(product[1]);
+        out.set_z(product[2]);
+        out
     }
 }
 
-impl Mul<Vector3D> for Matrix {
-    type Output = Vector3D;
+pub trait Translate<T> {
+    fn translate(self, offset: T) -> T;
+}
 
-    fn mul(self, rhs: Vector3D) -> Self::Output {
-        let mut product = [0.0; 4];
-        for row in 0..4 {
-            product[row] = self[row][0] * rhs.x()
-                + self[row][1] * rhs.y()
-                + self[row][2] * rhs.z()
-                + self[row][3] * 0.0;
-        }
-        Vector3D::new(product[0], product[1], product[2])
+impl<T: TupleMut + Clone> Translate<T> for Point3D {
+    fn translate(self, offset: T) -> T {
+        Matrix::translation(self) * offset
     }
 }
 
@@ -255,6 +270,7 @@ impl IndexMut<usize> for SubMatrix {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::units::Vector3D;
 
     // Approximate equality, good enough for floating point primative comparisons
     // in tests.
@@ -469,5 +485,29 @@ mod tests {
         ]);
         let m3 = m1 * m2;
         assert_eq!(m1, m3 * m2.inverse());
+    }
+
+    #[test]
+    fn test_translates_a_point() {
+        let start_point = Point3D::new(5.0, -3.0, 2.0); // This
+        let offset = Point3D::new(-3.0, 4.0, 5.0); // Translated by this
+        let end_point = Point3D::new(2.0, 1.0, 7.0); // equals this
+
+        assert_eq!(end_point, start_point.translate(offset));
+    }
+
+    #[test]
+    fn test_multiplying_by_inverse_translation_matrix_moves_a_point_back() {
+        let translation = Matrix::translation(Point3D::new(5.0, -3.0, 2.0));
+        assert_eq!(
+            Point3D::new(-8.0, 7.0, 3.0),
+            translation.inverse() * Point3D::new(-3.0, 4.0, 5.0)
+        );
+    }
+
+    #[test]
+    fn test_translation_has_no_effect_on_vectors() {
+        let translated = Point3D::new(5.0, -3.0, 2.0).translate(Vector3D::new(-3.0, 4.0, 5.0));
+        assert_eq!(Vector3D::new(-3.0, 4.0, 5.0), translated);
     }
 }

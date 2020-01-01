@@ -1,5 +1,5 @@
 use crate::color::Color;
-use crate::units::Point3D;
+use crate::units::{Tuple, Point3D};
 use std::fmt;
 use textwrap;
 

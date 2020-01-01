@@ -2,7 +2,7 @@
 //! output its position at each `tick` until it hits the ground (the Y
 //! coordinate is less than zero).
 //!
-use raytray::units::{Point3D, Vector3D};
+use raytray::units::{Point3D, Vector3D, Tuple};
 
 #[derive(Debug, Clone)]
 struct Projectile {

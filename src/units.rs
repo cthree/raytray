@@ -5,6 +5,19 @@ pub const EPSILON: f32 = 0.00001;
 
 pub type Unit3D = f32;
 
+pub trait Tuple {
+    fn x(&self) -> Unit3D;
+    fn y(&self) -> Unit3D;
+    fn z(&self) -> Unit3D;
+    fn w(&self) -> Unit3D;
+}
+
+pub trait TupleMut : Tuple {
+    fn set_x(&mut self, x: Unit3D);
+    fn set_y(&mut self, y: Unit3D);
+    fn set_z(&mut self, z: Unit3D);
+}
+
 // ==========================================================================
 // Vector3D
 
@@ -39,17 +52,37 @@ impl Vector3D {
         let cross_z = self.x() * other.y() - self.y() * other.x();
         Self(cross_x, cross_y, cross_z)
     }
+}
 
-    pub fn x(&self) -> Unit3D {
+impl Tuple for Vector3D {
+    fn x(&self) -> Unit3D {
         self.0
     }
 
-    pub fn y(&self) -> Unit3D {
+    fn y(&self) -> Unit3D {
         self.1
     }
 
-    pub fn z(&self) -> Unit3D {
+    fn z(&self) -> Unit3D {
         self.2
+    }
+
+    fn w(&self) -> Unit3D {
+        0.0
+    }
+}
+
+impl TupleMut for Vector3D {
+    fn set_x(&mut self, x: Unit3D) {
+        self.0 = x;
+    }
+
+    fn set_y(&mut self, y: Unit3D) {
+        self.1 = y;
+    }
+
+    fn set_z(&mut self, z: Unit3D) {
+        self.2 = z;
     }
 }
 
@@ -123,17 +156,37 @@ impl Point3D {
     pub fn new(x: Unit3D, y: Unit3D, z: Unit3D) -> Self {
         Self(x, y, z)
     }
+}
 
-    pub fn x(&self) -> Unit3D {
+impl Tuple for Point3D {
+    fn x(&self) -> Unit3D {
         self.0
     }
 
-    pub fn y(&self) -> Unit3D {
+    fn y(&self) -> Unit3D {
         self.1
     }
 
-    pub fn z(&self) -> Unit3D {
+    fn z(&self) -> Unit3D {
         self.2
+    }
+
+    fn w(&self) -> Unit3D {
+        1.0
+    }
+}
+
+impl TupleMut for Point3D {
+    fn set_x(&mut self, x: Unit3D) {
+        self.0 = x;
+    }
+
+    fn set_y(&mut self, y: Unit3D) {
+        self.1 = y;
+    }
+
+    fn set_z(&mut self, z: Unit3D) {
+        self.2 = z;
     }
 }
 
